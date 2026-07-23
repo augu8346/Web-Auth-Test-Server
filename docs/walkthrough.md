@@ -10,10 +10,11 @@ The project has been successfully and autonomously built! It is completely conta
 
 2. **Automated PKI Generation**:
    - `generate-certs.js` was written and set up to run automatically during the Docker build. It generates a Root CA, a trusted Server Cert, and a Client Certificate (`client.p12`) perfectly bundled for testing mTLS.
+   - The server dynamically generates a `.netrc` file locally to support `GDAL_HTTP_NETRC_FILE` testing.
 
 3. **Dual Express.js Servers**:
    - **HTTP Server (9480)**: Serves the Web UI, documentation, and the `/api/config` and `/api/logs` endpoints.
-   - **HTTPS Server (9443)**: Serves the protected endpoints and strictly enforces the various authentication schemas (Basic, Bearer, mTLS) before streaming the actual `cog.tif` back using native HTTP `Range` request support!
+   - **HTTPS Server (9443)**: Serves the protected endpoints and strictly enforces the various authentication schemas (Basic, Bearer, Netrc, mTLS) before streaming the actual `cog.tif` back using native HTTP `Range` request support!
 
 4. **Web UIs**:
    - **Home**: A beautifully styled landing page outlining the available endpoints and credentials.

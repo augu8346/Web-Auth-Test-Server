@@ -24,7 +24,7 @@ We will create the project at `D:\git\Web-Auth-Test-Server` and initialize Git.
 ### 2. Docker, Certificates & Portable Data
 - **Data**: I will copy `d:\RData\cog.tif` into the project directory (`data/cog.tif`). The Dockerfile will `COPY` this file into the image, making the container completely self-sufficient and portable.
 - **Docker**: A `Dockerfile` and `docker-compose.yml` will be created.
-- **Certificates**: A Node.js script (`generate-certs.js`) will generate the Root CA, Server Certificate, Client Certificate, and a PKCS#12 (`.p12`) file.
+- **Certificates**: A Node.js script (`generate-certs.js`) will generate the Root CA, Server Certificate, Client Certificate, and a PKCS#12 (`.p12`) file. The server will also automatically generate a `.netrc` file for testing GDAL `.netrc` credential lookup.
 
 ### 3. Endpoints (HTTP Server - Port 9480)
 - `/` - HTML Home page explaining the setup and providing default credentials.
@@ -36,6 +36,7 @@ We will create the project at `D:\git\Web-Auth-Test-Server` and initialize Git.
 ### 4. Endpoints (HTTPS Auth Server - Port 9443)
 - `/test/none/cog.tif` - Unauthenticated access (tests custom headers/cookies).
 - `/test/basic/cog.tif` - Requires Basic Auth.
+- `/test/netrc/cog.tif` - **[NEW]** Requires Basic Auth (tests `.netrc` file parsing in clients).
 - `/test/bearer/cog.tif` - Requires a valid Bearer token.
 - `/test/mtls/cog.tif` - Requires a valid Client Certificate.
 - `/oauth/authorize` - OAuth2 Authorization endpoint.

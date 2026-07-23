@@ -128,6 +128,19 @@
             </div>
 
             <div class="card">
+                <h2>Netrc Auth</h2>
+                <p>Test authentication using .netrc file credentials (uses Basic Auth under the hood).</p>
+                <ul>
+                    <li>Endpoint: <code>/test/netrc/cog.tif</code></li>
+                    <li>Machine: <code>localhost</code></li>
+                    <li>User: <code>admin</code></li>
+                    <li>Password: <code>admin</code></li>
+                </ul>
+                <p style="margin-top: 1rem; font-size: 0.9rem;"><strong>GDAL Config:</strong><br>
+                <code>GDAL_HTTP_NETRC_FILE=certs/.netrc</code></p>
+            </div>
+
+            <div class="card">
                 <h2>Bearer Token</h2>
                 <p>Test Authorization Bearer token workflows.</p>
                 <ul>

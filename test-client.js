@@ -63,6 +63,20 @@ async function run() {
     code = await check('Basic Auth', 'basic/cog.tif', { 'Authorization': 'Basic ' + Buffer.from('admin:admin').toString('base64') });
     if (code !== 200) success = false;
     
+    let netrcAuth = 'Basic ' + Buffer.from('admin:admin').toString('base64');
+    try {
+        const netrcContent = fs.readFileSync('certs/.netrc', 'utf8');
+        const matchLogin = netrcContent.match(/login\s+(\S+)/);
+        const matchPassword = netrcContent.match(/password\s+(\S+)/);
+        if (matchLogin && matchPassword) {
+            netrcAuth = 'Basic ' + Buffer.from(`${matchLogin[1]}:${matchPassword[1]}`).toString('base64');
+        }
+    } catch (e) {
+        console.log('Could not read .netrc for test, using default credentials');
+    }
+    code = await check('Netrc Auth', 'netrc/cog.tif', { 'Authorization': netrcAuth });
+    if (code !== 200) success = false;
+    
     code = await check('Bearer Auth', 'bearer/cog.tif', { 'Authorization': 'Bearer supersecrettoken123' });
     if (code !== 200) success = false;
 

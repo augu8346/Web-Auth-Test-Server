@@ -12,7 +12,8 @@
   - `[x]` Set up dual servers (HTTP on 9480, HTTPS on 9443)
   - `[x]` Implement robust request logging middleware (in-memory buffer)
   - `[x]` Implement static file serving for `cog.tif` with Range support
-  - `[x]` Implement Authentication Endpoints (Basic, Bearer, MTLS, Custom)
+  - `[x]` Implement Authentication Endpoints (Basic, Bearer, MTLS, Custom, Netrc)
+  - `[x]` Implement auto-generation of `.netrc` file for testing
   - `[x]` Implement OAuth2 Mock Endpoints
 - `[x]` 5. Web UI Implementation
   - `[x]` Build Home/Instructions Page

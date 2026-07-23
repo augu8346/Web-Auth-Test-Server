@@ -122,6 +122,7 @@ appHTTPS.all('/test/none/status', (req, res) => res.json({ status: 'ok', message
 
 // 2. Basic
 appHTTPS.all('/test/basic/cog.tif', checkBasicAuth, sendCogFile);
+appHTTPS.all('/test/netrc/cog.tif', checkBasicAuth, sendCogFile);
 
 // 3. Bearer
 appHTTPS.all('/test/bearer/cog.tif', checkBearerToken, sendCogFile);
@@ -186,6 +187,13 @@ appHTTP.get('/api/config', (req, res) => {
 
 // Start Servers
 const startServers = () => {
+    // Generate .netrc file if it doesn't exist
+    const netrcPath = path.join(certsDir, '.netrc');
+    if (!fs.existsSync(netrcPath)) {
+        fs.writeFileSync(netrcPath, 'machine localhost\nlogin admin\npassword admin\n');
+        console.log(`Generated .netrc file at ${netrcPath}`);
+    }
+
     // HTTP
     http.createServer(appHTTP).listen(HTTP_PORT, () => {
         console.log(`[HTTP] Information server running on http://localhost:${HTTP_PORT}`);
