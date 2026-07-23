@@ -155,8 +155,9 @@
                     <li>Certs located in the <code>certs/</code> folder.</li>
                 </ul>
                 <p style="margin-top: 1rem; font-size: 0.9rem;"><strong>GDAL Config:</strong><br>
-                <code>CURL_CA_BUNDLE=certs/ca.crt</code><br>
-                <code>GDAL_HTTP_SSLCERT=certs/client.p12</code> (or .crt)<br>
+                <code>GDAL_HTTP_UNSAFESSL=YES</code><br>
+                <code>GDAL_HTTP_SSLCERTTYPE=PEM</code><br>
+                <code>GDAL_HTTP_SSLCERT=certs/client.crt</code><br>
                 <code>GDAL_HTTP_SSLKEY=certs/client.key</code></p>
             </div>
         </div>

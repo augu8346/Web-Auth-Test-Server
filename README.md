@@ -41,7 +41,36 @@ Once started, two servers will be running:
 
 ## Testing with GDAL
 
-When testing GDAL against this server, you will need to configure GDAL to trust the local self-signed CA and pass the appropriate certificates for mTLS. You can do this via environment variables or GDAL configuration options:
+When testing GDAL against this server, you will need to configure GDAL to pass the appropriate client certificates for mTLS. Due to strict trust validation in some GDAL builds on Windows, the recommended approach for testing is to use `GDAL_HTTP_UNSAFESSL='YES'`.
 
-- **Trusting the Mock CA**: Set `CURL_CA_BUNDLE=/path/to/certs/ca.crt` (or `GDAL_HTTP_UNSAFESSL=YES` if you prefer to completely bypass the trust check).
-- **mTLS Client Certificates**: Set `GDAL_HTTP_SSLCERT=/path/to/certs/client.crt` and `GDAL_HTTP_SSLKEY=/path/to/certs/client.key` (or point `GDAL_HTTP_SSLCERT` directly to `client.p12`).
+### mTLS Example (Recommended)
+
+Run the following in PowerShell (adjust the paths to where your repository is cloned). Using `GDAL_HTTP_UNSAFESSL` allows you to test the client certificate handshake without wrestling with local root certificate stores:
+
+```powershell
+$ENV:GDAL_HTTP_UNSAFESSL='YES'
+$ENV:GDAL_HTTP_SSLCERTTYPE='PEM'
+$ENV:GDAL_HTTP_SSLCERT='D:/git/Web-Auth-Test-Server/certs/client.crt'
+$ENV:GDAL_HTTP_SSLKEY='D:/git/Web-Auth-Test-Server/certs/client.key'
+
+gdalinfo /vsicurl/https://localhost:9443/test/mtls-pki/cog.tif
+```
+
+**Expected Output:**
+```text
+Driver: GTiff/GeoTIFF
+Files: /vsicurl/https://localhost:9443/test/mtls-pki/cog.tif
+Size is 512, 512
+...
+```
+
+### Alternative: Windows Trusted Root Store
+
+If you prefer *not* to use `GDAL_HTTP_UNSAFESSL='YES'`, you can forcefully trust the Mock CA by installing it into your Windows Trusted Root Certificate Authorities. 
+
+*Note: Because Docker automatically generates fresh certificates every time the container is built/started, you will need to redo this process and import the new `ca.crt` every time the certificates change.*
+
+```powershell
+Import-Certificate -FilePath "D:/git/Web-Auth-Test-Server/certs/ca.crt" -CertStoreLocation Cert:\CurrentUser\Root
+```
+Once installed, you can drop `$ENV:GDAL_HTTP_UNSAFESSL='YES'` and the `gdalinfo` command will pass natively.
