@@ -17,7 +17,8 @@ async function check(name, testPath, headers, optionsExt = {}) {
 
 async function testOauth2() {
     console.log('\n--- Testing OAuth2 ---');
-    return new Promise((resolve) => {
+    
+    const testClientCredentials = new Promise((resolve) => {
         const postData = 'grant_type=client_credentials&client_id=test&client_secret=test';
         const req = https.request('https://localhost:9443/oauth/token', {
             method: 'POST',
@@ -30,27 +31,66 @@ async function testOauth2() {
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
-                    console.log('Failed to get token. Status:', res.statusCode);
+                    console.log('Failed to get token (Client Credentials). Status:', res.statusCode);
                     return resolve(res.statusCode);
                 }
                 const token = JSON.parse(data).access_token;
-                console.log('Got token:', token);
+                console.log('Got token (Client Credentials):', token);
                 
                 https.get('https://localhost:9443/test/oauth2/cog.tif', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 }, (res2) => {
-                    console.log('OAuth2 File Access Status:', res2.statusCode);
+                    console.log('OAuth2 File Access Status (Client Credentials):', res2.statusCode);
                     resolve(res2.statusCode);
                 });
             });
         });
         req.on('error', (e) => {
-            console.log('OAuth2 Error:', e.message);
+            console.log('OAuth2 Error (Client Credentials):', e.message);
             resolve(500);
         });
         req.write(postData);
         req.end();
     });
+
+    const testAuthCodePkce = new Promise((resolve) => {
+        const postData = 'grant_type=authorization_code&code=mock_auth_code_123&client_id=test&code_verifier=mock_code_verifier';
+        const req = https.request('https://localhost:9443/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode !== 200) {
+                    console.log('Failed to get token (Auth Code w/ PKCE). Status:', res.statusCode);
+                    return resolve(res.statusCode);
+                }
+                const token = JSON.parse(data).access_token;
+                console.log('Got token (Auth Code w/ PKCE):', token);
+                
+                https.get('https://localhost:9443/test/oauth2/cog.tif', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }, (res2) => {
+                    console.log('OAuth2 File Access Status (Auth Code w/ PKCE):', res2.statusCode);
+                    resolve(res2.statusCode);
+                });
+            });
+        });
+        req.on('error', (e) => {
+            console.log('OAuth2 Error (Auth Code w/ PKCE):', e.message);
+            resolve(500);
+        });
+        req.write(postData);
+        req.end();
+    });
+
+    const code1 = await testClientCredentials;
+    const code2 = await testAuthCodePkce;
+    return (code1 === 200 && code2 === 200) ? 200 : 500;
 }
 
 async function run() {
