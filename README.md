@@ -67,10 +67,11 @@ Size is 512, 512
 Run the following in PowerShell (adjust the paths to where your repository is cloned). Using `GDAL_HTTP_UNSAFESSL` allows you to test the client certificate handshake without wrestling with local root certificate stores:
 
 ```powershell
-$ENV:GDAL_HTTP_UNSAFESSL='YES'
+$ENV:GDAL_ADDITIONAL_CA_PATH='D:/git/Web-Auth-Test-Server/certs'
 $ENV:GDAL_HTTP_SSLCERTTYPE='PEM'
 $ENV:GDAL_HTTP_SSLCERT='D:/git/Web-Auth-Test-Server/certs/client.crt'
 $ENV:GDAL_HTTP_SSLKEY='D:/git/Web-Auth-Test-Server/certs/client.key'
+gdalinfo /vsicurl/https://localhost:9443/test/mtls-pki/cog.tif
 
 gdalinfo /vsicurl/https://localhost:9443/test/mtls-pki/cog.tif
 ```
