@@ -38,3 +38,10 @@ Once started, two servers will be running:
      - `/oauth/authorize`
      - `/oauth/token`
      - `/test/oauth2/cog.tif`
+
+## Testing with GDAL
+
+When testing GDAL against this server, you will need to configure GDAL to trust the local self-signed CA and pass the appropriate certificates for mTLS. You can do this via environment variables or GDAL configuration options:
+
+- **Trusting the Mock CA**: Set `CURL_CA_BUNDLE=/path/to/certs/ca.crt` (or `GDAL_HTTP_UNSAFESSL=YES` if you prefer to completely bypass the trust check).
+- **mTLS Client Certificates**: Set `GDAL_HTTP_SSLCERT=/path/to/certs/client.crt` and `GDAL_HTTP_SSLKEY=/path/to/certs/client.key` (or point `GDAL_HTTP_SSLCERT` directly to `client.p12`).
