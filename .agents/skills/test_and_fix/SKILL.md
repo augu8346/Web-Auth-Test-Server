@@ -7,8 +7,8 @@ description: Runs a suite of test requests against the auth server and autonomou
 
 When the user asks you to verify or "test and fix" the server, follow these steps:
 
-1. **Test the endpoints**: Write and execute a temporary Node.js script using the `run_command` tool that attempts to hit all the authentication endpoints (Basic, Bearer, None, mTLS, and OAuth2) on `https://localhost:9443` using the correct credentials. 
-   *(Note: Remember to use `process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';` in your Node.js test script. For the mTLS endpoint, make sure your script uses `fs.readFileSync` to load `certs/client.key` and `certs/client.crt` and passes them into the `https.get` options!)*
+1. **Test the endpoints**: Use the `run_command` tool to execute `node test-client.js` in the project root. This script is already configured to test all endpoints including Basic, Bearer, None, mTLS, and a full OAuth2 POST-to-GET flow.
+   *(Note: Make sure the server is actually running locally or in Docker before you run the test script).*
 2. **Analyze Results**: If all tests return HTTP 200 or 206, report to the user that the server is perfectly healthy.
 3. **Debug and Fix**: If any endpoint returns a 401, 403, 500, or fails entirely:
    - Read the contents of `server.js` using `view_file`.

@@ -126,8 +126,12 @@ appHTTPS.all('/test/basic/cog.tif', checkBasicAuth, sendCogFile);
 // 3. Bearer
 appHTTPS.all('/test/bearer/cog.tif', checkBearerToken, sendCogFile);
 
-// 4. MTLS
+// 4. MTLS (PEM/PKI and PKCS#12)
+// Note: The server sees these exactly the same during the TLS handshake, 
+// but separate endpoints help keep your GDAL client test scripts organized!
 appHTTPS.all('/test/mtls/cog.tif', checkMtls, sendCogFile);
+appHTTPS.all('/test/mtls-pki/cog.tif', checkMtls, sendCogFile);
+appHTTPS.all('/test/mtls-pkcs12/cog.tif', checkMtls, sendCogFile);
 
 // 5. OAuth2 Mocking
 appHTTPS.get('/oauth/authorize', (req, res) => {
