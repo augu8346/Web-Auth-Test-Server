@@ -102,9 +102,9 @@ const checkMtls = (req, res, next) => {
     if (req.client.authorized) {
         return next();
     } else if (clientCert && clientCert.subject) {
-        return res.status(403).send('Client certificate provided but not authorized.');
+        return res.status(403).send(`Client certificate provided but not authorized. Error: ${req.socket.authorizationError}`);
     } else {
-        return res.status(401).send('Client certificate required.');
+        return res.status(401).send(`Client certificate required. Error: ${req.socket.authorizationError}`);
     }
 };
 
