@@ -9,4 +9,6 @@ services:
     environment:
       - HTTP_PORT=9480
       - HTTPS_PORT=9443
+    volumes:
+      - ./certs:/app/certs
     container_name: web-auth-test-server
