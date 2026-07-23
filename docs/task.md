@@ -1,0 +1,25 @@
+# Task Checklist: Mock Auth Testing Server
+
+- `[x]` 1. Setup Project Workspace
+  - `[x]` Create `D:\git\Web-Auth-Test-Server`
+  - `[x]` Initialize Git repository
+  - `[x]` Copy `cog.tif` to the project directory
+- `[x]` 2. Node.js Project Setup
+  - `[x]` Create `package.json` with required dependencies (`express`, `node-forge` for certs, etc.)
+- `[x]` 3. Certificate Generation Script
+  - `[x]` Write script to generate CA, Server, and Client certs (including `.p12`)
+- `[x]` 4. Server Implementation
+  - `[x]` Set up dual servers (HTTP on 9480, HTTPS on 9443)
+  - `[x]` Implement robust request logging middleware (in-memory buffer)
+  - `[x]` Implement static file serving for `cog.tif` with Range support
+  - `[x]` Implement Authentication Endpoints (Basic, Bearer, MTLS, Custom)
+  - `[x]` Implement OAuth2 Mock Endpoints
+- `[x]` 5. Web UI Implementation
+  - `[x]` Build Home/Instructions Page
+  - `[x]` Build Client Testing Page (`/client`)
+  - `[x]` Build Live Logs Page (`/logs`)
+- `[x]` 6. Dockerization
+  - `[x]` Write `Dockerfile`
+  - `[x]` Write `docker-compose.yml`
+- `[x]` 7. Verification
+  - `[x]` Build Docker container and test endpoints locally
