@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Auth Testing Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --accent-hover: #7dd3fc;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: -webkit-linear-gradient(45deg, var(--accent), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p { margin-bottom: 2rem; color: #cbd5e1; font-size: 1.1rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent);
+        }
+        .card h2 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent); }
+        .card pre {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            color: #a7f3d0;
+            margin-top: 1rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+        .btn {
+            background: var(--accent);
+            color: #0f172a;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+        .btn-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .btn-outline:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+        ul { list-style-position: inside; color: #cbd5e1; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auth Test Server</h1>
+        <p>A self-contained testing environment for validating HTTP authentication flows with GDAL, ArcObjects, and other clients.</p>
+        
+        <div class="nav-links">
+            <a href="/client.html" class="btn">🚀 Open Test Client</a>
+            <a href="/logs.html" class="btn btn-outline">📡 View Live Logs</a>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>No Auth / Custom</h2>
+                <p>Test custom headers and cookies without mandatory authentication.</p>
+                <ul>
+                    <li>Endpoint: <code>/test/none/cog.tif</code></li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>Basic Auth</h2>
+                <p>Test standard HTTP Basic Authentication (also used for netrc testing).</p>
+                <ul>
+                    <li>Endpoint: <code>/test/basic/cog.tif</code></li>
+                    <li>User: <code>admin</code></li>
+                    <li>Password: <code>admin</code></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Bearer Token</h2>
+                <p>Test Authorization Bearer token workflows.</p>
+                <ul>
+                    <li>Endpoint: <code>/test/bearer/cog.tif</code></li>
+                    <li>Token: <code>supersecrettoken123</code></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>OAuth 2.0</h2>
+                <p>Simulate OAuth workflows (Auth Code / Client Credentials).</p>
+                <ul>
+                    <li>Auth: <code>/oauth/authorize</code></li>
+                    <li>Token: <code>/oauth/token</code></li>
+                    <li>Target: <code>/test/oauth2/cog.tif</code></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>mTLS (Client Certs)</h2>
+                <p>Test Mutual TLS using PKI / PKCS #12 certificates.</p>
+                <ul>
+                    <li>Endpoint: <code>/test/mtls/cog.tif</code></li>
+                    <li>Cert: Use <code>client.p12</code> located in the <code>certs/</code> folder.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>Server Configuration Info</h2>
+            <p>You can fetch these defaults programmatically:</p>
+            <pre id="config-out">Loading...</pre>
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/config')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('config-out').textContent = JSON.stringify(data, null, 2);
+            });
+    </script>
+</body>
+</html>

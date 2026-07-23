@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  auth-server:
+    build: .
+    ports:
+      - "9480:9480"
+      - "9443:9443"
+    environment:
+      - HTTP_PORT=9480
+      - HTTPS_PORT=9443
+    container_name: web-auth-test-server

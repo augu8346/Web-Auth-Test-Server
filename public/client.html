@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Client - Auth Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #10b981;
+            --accent-hover: #34d399;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { font-weight: 800; color: var(--accent); }
+        .back-btn { color: #cbd5e1; text-decoration: none; }
+        .back-btn:hover { color: #fff; text-decoration: underline; }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-weight: 600; }
+        select, input {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            color: #fff;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--accent); }
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        button:hover { background: var(--accent-hover); transform: translateY(-2px); }
+        
+        #result-card { display: none; }
+        pre {
+            background: rgba(0,0,0,0.5);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #a7f3d0;
+            white-space: pre-wrap;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .status-200 { background: #065f46; color: #a7f3d0; }
+        .status-206 { background: #075985; color: #bae6fd; }
+        .status-401 { background: #7f1d1d; color: #fecaca; }
+        .status-error { background: #991b1b; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Test Client</h1>
+            <a href="/" class="back-btn">&larr; Back to Home</a>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label>Authentication Type</label>
+                <select id="auth-type" onchange="updateForm()">
+                    <option value="none">None / Custom Headers</option>
+                    <option value="basic">Basic Auth</option>
+                    <option value="bearer">Bearer Token</option>
+                    <option value="mtls">mTLS (Client Certs)</option>
+                </select>
+            </div>
+            
+            <div id="credentials-group" class="form-group" style="display: none;">
+                <label id="cred-label">Credentials</label>
+                <input type="text" id="cred-input" placeholder="...">
+            </div>
+
+            <div class="form-group">
+                <label>HTTP Range Header (Optional)</label>
+                <input type="text" id="range-input" placeholder="e.g. bytes=0-1023">
+            </div>
+
+            <button onclick="runTest()">Send Request</button>
+        </div>
+
+        <div id="result-card" class="card">
+            <h2>Result</h2>
+            <div id="status-badge" class="status-badge"></div>
+            <label>Response Headers</label>
+            <pre id="response-headers"></pre>
+            <label>Response Body (snippet or message)</label>
+            <pre id="response-body"></pre>
+        </div>
+    </div>
+
+    <script>
+        const httpsUrl = 'https://localhost:9443';
+
+        function updateForm() {
+            const type = document.getElementById('auth-type').value;
+            const credGroup = document.getElementById('credentials-group');
+            const credLabel = document.getElementById('cred-label');
+            const credInput = document.getElementById('cred-input');
+
+            if (type === 'basic') {
+                credGroup.style.display = 'block';
+                credLabel.textContent = 'Username:Password';
+                credInput.value = 'admin:admin';
+                credInput.placeholder = 'admin:admin';
+            } else if (type === 'bearer') {
+                credGroup.style.display = 'block';
+                credLabel.textContent = 'Token';
+                credInput.value = 'supersecrettoken123';
+                credInput.placeholder = 'Token...';
+            } else if (type === 'none') {
+                credGroup.style.display = 'block';
+                credLabel.textContent = 'Custom Header (X-Custom: value)';
+                credInput.value = 'X-Custom-Test: Hello';
+                credInput.placeholder = 'Header: Value';
+            } else if (type === 'mtls') {
+                credGroup.style.display = 'none';
+                // mTLS relies on browser picking cert, we can't force it via fetch easily
+                // Users just have to install the cert into their OS/browser for it to work here
+            }
+        }
+
+        async function runTest() {
+            const type = document.getElementById('auth-type').value;
+            const credInput = document.getElementById('cred-input').value;
+            const range = document.getElementById('range-input').value;
+            
+            const endpoint = `${httpsUrl}/test/${type}/cog.tif`;
+            
+            const headers = {};
+            if (range) headers['Range'] = range;
+
+            if (type === 'basic') {
+                headers['Authorization'] = 'Basic ' + btoa(credInput);
+            } else if (type === 'bearer') {
+                headers['Authorization'] = 'Bearer ' + credInput;
+            } else if (type === 'none' && credInput.includes(':')) {
+                const [k, v] = credInput.split(':');
+                headers[k.trim()] = v.trim();
+            }
+
+            document.getElementById('result-card').style.display = 'block';
+            document.getElementById('status-badge').className = 'status-badge';
+            document.getElementById('status-badge').textContent = 'Loading...';
+            document.getElementById('response-headers').textContent = '';
+            document.getElementById('response-body').textContent = '';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                document.getElementById('status-badge').textContent = `${res.status} ${res.statusText}`;
+                
+                if (res.status === 200) document.getElementById('status-badge').className = 'status-badge status-200';
+                else if (res.status === 206) document.getElementById('status-badge').className = 'status-badge status-206';
+                else document.getElementById('status-badge').className = 'status-badge status-401';
+
+                const resHeaders = {};
+                res.headers.forEach((v, k) => { resHeaders[k] = v; });
+                document.getElementById('response-headers').textContent = JSON.stringify(resHeaders, null, 2);
+
+                const blob = await res.blob();
+                if (blob.type.includes('image/') || res.status === 200 || res.status === 206) {
+                    document.getElementById('response-body').textContent = `<Binary Data: ${blob.size} bytes received>`;
+                } else {
+                    const text = await blob.text();
+                    document.getElementById('response-body').textContent = text;
+                }
+            } catch (err) {
+                document.getElementById('status-badge').textContent = 'Fetch Error';
+                document.getElementById('status-badge').className = 'status-badge status-error';
+                document.getElementById('response-body').textContent = err.toString() + "\n(Note: mTLS tests or self-signed certs might fail in fetch() if the cert is not trusted by your browser. Accept the warning directly in the browser first!)";
+            }
+        }
+        
+        // Initialize
+        updateForm();
+    </script>
+</body>
+</html>
