@@ -49,7 +49,8 @@ function logRequest(req, isHttps) {
 
 // CORS just in case client UI needs to hit it via fetch
 appHTTPS.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin || '*';
+    res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Range, X-Custom-Header');
     res.header('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
