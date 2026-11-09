@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
 test('all profiles have copyable, complete connection handoffs', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -15,12 +17,61 @@ test('all profiles have copyable, complete connection handoffs', async ({ page, 
         expect(copied).toContain('Raster URL:');
         expect(copied).toContain('curl.exe');
         expect(copied).toContain('gdalinfo');
-        if (id !== 'none-http') expect(copied).toContain('--ssl-revoke-best-effort');
+        if (id !== 'none-http') {
+            expect(copied).toContain('--ssl-revoke-best-effort');
+            expect(copied).toContain('http://localhost:19480/downloads/ca.crt');
+            expect(copied).toContain("Join-Path $HOME 'Downloads'");
+            expect(copied).not.toContain('Invoke-WebRequest');
+        }
         if (id.startsWith('mtls')) expect(copied).toContain('GDAL_HTTP_SSLCERT');
         if (id === 'oauth2') expect(copied).toContain('Token URL: https://localhost:19443/oauth/token');
     }
     expect(errors).toEqual([]);
 });
+
+for (const [protocol, origin] of [['HTTP', 'http://localhost:19480'], ['HTTPS', 'https://localhost:19443']]) {
+    test(`${protocol}: every profile downloads its required setup files directly`, async ({ page }) => {
+        await page.goto(origin);
+        const assets = {
+            'none-http': [],
+            'none-https': ['ca.crt'],
+            basic: ['ca.crt'],
+            netrc: ['ca.crt', 'test.netrc'],
+            bearer: ['ca.crt'],
+            oauth2: ['ca.crt'],
+            'mtls-pki': ['ca.crt', 'client.crt', 'client.key'],
+            'mtls-pkcs12': ['ca.crt', 'client.p12']
+        };
+        const detail = page.locator('#connection-detail');
+        for (const [id, names] of Object.entries(assets)) {
+            await page.locator(`[data-profile="${id}"]`).click();
+            await expect(detail.locator('a[download]')).toHaveCount(names.length);
+            if (!names.length) {
+                await expect(detail).toContainText('No certificate or credential files are required');
+                continue;
+            }
+            await expect(detail).toContainText('browser saves to Downloads');
+            await expect(detail.locator('details')).toHaveJSProperty('open', false);
+            expect((await detail.locator('pre:visible').allTextContents()).join('\n')).not.toContain('Invoke-WebRequest');
+            for (const name of names) {
+                const link = detail.locator(`a[download="${name}"]`);
+                await expect(link).toHaveAttribute('href', `/downloads/${name}`);
+                const [download] = await Promise.all([page.waitForEvent('download'), link.click()]);
+                expect(download.suggestedFilename()).toBe(name);
+                expect(await download.failure()).toBeNull();
+                const chunks = [];
+                for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+                const expected = name === 'test.netrc'
+                    ? Buffer.from('machine localhost\nlogin admin\npassword admin\n')
+                    : await fs.readFile(path.join(__dirname, '..', 'certs', name));
+                expect(Buffer.concat(chunks).equals(expected)).toBe(true);
+            }
+            await detail.getByText('Optional: download with PowerShell instead', { exact: true }).click();
+            await expect(detail.locator('details pre')).toBeVisible();
+            await expect(detail.locator('details pre')).toContainText('Invoke-WebRequest');
+        }
+    });
+}
 
 test('both no-auth profiles expose the Brotli case with correct URLs', async ({ page }) => {
     await page.goto('/');
@@ -59,6 +110,8 @@ test('request playground executes actual auth, range and decoded Brotli requests
 test('certificate guide provides active assets and host-side trust instructions', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#trust-command')).toContainText('Cert:\\CurrentUser\\Root');
+    await expect(page.locator('#trust-command')).not.toContainText('Invoke-WebRequest');
+    await expect(page.locator('#certificates')).toContainText('Install Certificate');
     await expect(page.locator('#ca-fingerprint')).toContainText('SHA-256:');
     await expect(page.locator('#verify-command')).toContainText('--cacert');
     await expect(page.locator('#verify-command')).toContainText('--ssl-revoke-best-effort');

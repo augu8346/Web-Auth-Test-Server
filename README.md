@@ -67,12 +67,17 @@ cover the actual hostname/IP. A client in another container cannot use its own
 
 ## Trust HTTPS on the Windows Docker host
 
-Do this **on the machine/account running the client**, not inside Docker:
+Do this **on the machine/account running the client**, not inside Docker.
+Use **Download root CA** in the website's Certificates & trust section. Open the
+downloaded `ca.crt`, choose Install Certificate / Current User, then place it in
+Trusted Root Certification Authorities. Verify the fingerprint through a trusted
+channel before approving the import.
+
+Alternatively, after downloading the file, import and verify with PowerShell:
 
 ```powershell
-$assetDir = Join-Path $HOME 'AuthTest'
-New-Item -ItemType Directory -Force -Path $assetDir | Out-Null
-Invoke-WebRequest http://localhost:9480/downloads/ca.crt -OutFile "$assetDir\ca.crt"
+$assetDir = Join-Path $HOME 'Downloads'
+# Change this to the folder containing your downloaded ca.crt.
 Import-Certificate -FilePath "$assetDir\ca.crt" -CertStoreLocation Cert:\CurrentUser\Root
 curl.exe --fail --ssl-revoke-best-effort --cacert "$assetDir\ca.crt" https://localhost:9443/test/none/status
 ```
@@ -105,8 +110,16 @@ deleting only the matching Mock Auth Testing CA.
 
 ## Connection catalog
 
-The website's **Copy connection handoff** includes the precise fields, asset
-downloads and commands for each profile. All values below are dummy test values.
+Each connection profile has direct download buttons for exactly the files it
+needs: the CA for HTTPS, netrc credentials for Netrc, certificate + key for PEM,
+and the client bundle for PKCS#12. HTTP needs no setup files. PowerShell downloads
+remain available in an optional collapsed section; they are not required.
+
+Save the files together. Examples assume `$HOME\Downloads`; set `$assetDir` to
+your chosen folder and retain the original filenames rather than browser-renamed
+duplicates. The website cannot force a local save folder or install certificate
+trust automatically. Its **Copy connection handoff** includes direct download
+URLs as well as connection fields and commands. All values below are dummy values.
 
 | Case | Path | Configuration |
 |---|---|---|

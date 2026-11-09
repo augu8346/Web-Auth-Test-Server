@@ -6,10 +6,12 @@
 
 - Offline, responsive Connection Lab UI with eight connection profiles,
   copyable handoffs, certificate downloads, a request playground and live logs.
+- Direct setup-file downloads in every relevant profile, browser-folder guidance
+  and Windows certificate-wizard instructions; scripted downloads are optional.
 - Unauthenticated HTTP TIFF access alongside HTTPS, with a separate Brotli
   content-encoding case on both protocols.
 - Windows/Docker host trust instructions, including Schannel revocation behavior.
-- Twenty integration tests and nine Chromium tests, plus a GitHub Actions
+- Twenty integration tests and eleven Chromium tests, plus a GitHub Actions
   workflow that builds Docker and runs both suites.
 - Contributor, support, security and third-party documentation and issue forms.
 

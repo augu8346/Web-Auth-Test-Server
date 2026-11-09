@@ -4,9 +4,12 @@
 
 - `npm test`: 20 Node integration tests pass against the running server. These
   verify the active CA instead of globally disabling TLS validation.
-- `npm run test:ui`: 9 Chromium tests pass, covering the connection handoffs,
+- `npm run test:ui`: 11 Chromium tests pass, covering the connection handoffs,
   clipboard, both Brotli variants, real Basic/bearer/OAuth requests, certificate
   guidance, logs, visible error states, and desktop/mobile overflow.
+- Direct setup-file downloads are checked in every profile on both HTTP and
+  HTTPS pages. Browser-suggested filenames and downloaded bytes match the active
+  certificate files or generated netrc; scripted downloads remain optional.
 - Desktop and 390-pixel mobile screenshots were inspected. The site uses only
   local assets.
 - `docker compose config --quiet`: configuration validates.

@@ -56,7 +56,15 @@ function codeBlock(text) {
 }
 
 const ps = value => `'${String(value).replaceAll("'", "''")}'`;
-const assetDir = '$assetDir = Join-Path $HOME \'AuthTest\'';
+const assetDir = '$assetDir = Join-Path $HOME \'Downloads\'';
+const downloadLocationHelp = 'Save all required files in the same folder. The examples assume your browser saves to Downloads; change $assetDir if you use another folder. Keep the filenames shown here, replacing older test files rather than using browser-renamed copies such as ca (1).crt.';
+const assetLabels = {
+    'ca.crt': 'Root CA',
+    'client.crt': 'Client certificate',
+    'client.key': 'Client private key (test only)',
+    'client.p12': 'Client PKCS#12 bundle',
+    'test.netrc': 'Netrc credentials'
+};
 
 function downloadCommands(names) {
     return `${assetDir}\nNew-Item -ItemType Directory -Force -Path $assetDir | Out-Null\n` +
@@ -110,7 +118,7 @@ function profileDetails(profile, variant = 'standard') {
             gdalFlags += `--config GDAL_HTTP_AUTH BASIC --config GDAL_HTTP_USERPWD ${ps(`${config.basic.username}:${config.basic.password}`)} `;
         } else {
             assets.push('test.netrc');
-            fields.push(['Netrc machine', new URL(url).hostname], ['Netrc file', '$HOME\\AuthTest\\test.netrc']);
+            fields.push(['Netrc machine', new URL(url).hostname], ['Netrc file', '$assetDir\\test.netrc']);
             curlFlags += '--netrc-file "$assetDir\\test.netrc" ';
             gdalFlags += '--config GDAL_HTTP_NETRC YES --config GDAL_HTTP_NETRC_FILE "$assetDir\\test.netrc" ';
         }
@@ -137,21 +145,21 @@ function profileDetails(profile, variant = 'standard') {
         fields.push(['Client identity', 'test-client'], ['Legacy alias', `${profile.base}/test/mtls/cog.tif`]);
         if (profile.id === 'mtls-pki') {
             assets.push('client.crt', 'client.key');
-            fields.push(['Certificate', '$HOME\\AuthTest\\client.crt'], ['Private key', '$HOME\\AuthTest\\client.key'], ['Key password', 'None (unencrypted test key)']);
+            fields.push(['Certificate', '$assetDir\\client.crt'], ['Private key', '$assetDir\\client.key'], ['Key password', 'None (unencrypted test key)']);
             curlFlags += '--cert-type PEM --cert "$assetDir\\client.crt" --key "$assetDir\\client.key" ';
             gdalFlags += '--config GDAL_HTTP_SSLCERTTYPE PEM --config GDAL_HTTP_SSLCERT "$assetDir\\client.crt" --config GDAL_HTTP_SSLKEY "$assetDir\\client.key" ';
         } else {
             assets.push('client.p12');
-            fields.push(['Bundle', '$HOME\\AuthTest\\client.p12'], ['Bundle password', config.certificates.password]);
+            fields.push(['Bundle', '$assetDir\\client.p12'], ['Bundle password', config.certificates.password]);
             curlFlags += `--cert-type P12 --cert "$assetDir\\client.p12:${config.certificates.password}" `;
             gdalFlags += `--config GDAL_HTTP_SSLCERTTYPE P12 --config GDAL_HTTP_SSLCERT "$assetDir\\client.p12" --config GDAL_HTTP_KEYPASSWD ${ps(config.certificates.password)} `;
         }
         notes += ' No client certificate returns 401; an untrusted identity may fail at the TLS handshake or return 403. PEM/P12 file support depends on the client TLS backend. These commands target an OpenSSL-capable curl/GDAL build; Windows Schannel curl may need the client certificate imported into CurrentUser\\My and selected by thumbprint instead. The root CA is not a client identity.';
     }
-    const setup = assets.length ? downloadCommands(assets) : '# No certificate or credential files are required for HTTP.';
+    const setup = assets.length ? `${assetDir}\n# Change this path if you saved the files in another folder.` : '# No certificate or credential files are required for HTTP.';
     const curl = `${beforeCurl}curl.exe --fail-with-body --show-error ${curlFlags}--output .\\downloaded-cog.tif ${ps(url)}`;
     const gdal = `${profile.id === 'oauth2' ? '# Run the token acquisition commands above first.\n' : ''}gdalinfo ${gdalFlags}${ps(`${brotli ? '/vsicurl_streaming/' : '/vsicurl/'}${url}`)}`;
-    return { url, fields, setup, curl, gdal, notes };
+    return { url, fields, assets, setup, curl, gdal, notes };
 }
 
 function renderProfile() {
@@ -194,12 +202,37 @@ function renderProfile() {
         row.append(element('dt', name), dd, button);
         fields.append(row);
     }
-    const handoff = `${profile.title}\n${data.fields.map(([key, value]) => `${key}: ${value}`).join('\n')}\n\n${data.notes}\n\nPowerShell setup:\n${data.setup}\n\ncurl:\n${data.curl}\n\nGDAL:\n${data.gdal}`;
+    const downloads = data.assets.length
+        ? `\n\nDownload required files:\n${data.assets.map(name => `${assetLabels[name]}: ${location.origin}/downloads/${name}`).join('\n')}\n${downloadLocationHelp}`
+        : '';
+    const handoff = `${profile.title}\n${data.fields.map(([key, value]) => `${key}: ${value}`).join('\n')}\n\n${data.notes}${downloads}\n\nPowerShell setup:\n${data.setup}\n\ncurl:\n${data.curl}\n\nGDAL:\n${data.gdal}`;
     const copyAll = copyButton(handoff, 'Copy connection handoff');
     copyAll.className = 'button';
     detail.append(fields, copyAll, element('h4', 'Expected behavior'), element('p', data.notes, 'notice'));
-    detail.append(element('h4', '1. Prepare test assets / PowerShell'), codeBlock(data.setup),
-        element('h4', '2. Download with curl / PowerShell'), codeBlock(data.curl),
+    detail.append(element('h4', '1. Download setup files'));
+    if (data.assets.length) {
+        const links = element('div', undefined, 'download-links');
+        links.id = 'profile-downloads';
+        links.setAttribute('role', 'group');
+        links.setAttribute('aria-label', 'Required setup files');
+        for (const name of data.assets) {
+            const link = element('a', `${assetLabels[name]} (${name})`, 'button');
+            link.href = `/downloads/${name}`;
+            link.download = name;
+            links.append(link);
+        }
+        detail.append(element('p', 'Download each file directly below. No PowerShell download commands are required.'), links,
+            element('p', downloadLocationHelp, 'small'), codeBlock(data.setup));
+        if (data.assets.includes('client.key') || data.assets.includes('client.p12')) {
+            detail.append(element('p', 'These downloadable private keys identify the public test client only. Never reuse them outside this test environment.', 'small'));
+        }
+        const scripted = element('details');
+        scripted.append(element('summary', 'Optional: download with PowerShell instead'), codeBlock(downloadCommands(data.assets)));
+        detail.append(scripted);
+    } else {
+        detail.append(element('p', 'No certificate or credential files are required for either HTTP test case. Use the raster URL or commands below.'));
+    }
+    detail.append(element('h4', '2. Download raster with curl / PowerShell'), codeBlock(data.curl),
         element('h4', '3. Open with GDAL / PowerShell'), codeBlock(data.gdal),
         element('p', 'Run examples in a fresh PowerShell session with curl.exe and gdalinfo on PATH. Remove inherited GDAL_HTTP_* credential overrides before switching profiles. HTTPS examples use an explicit CA file. The curl revocation option allows missing revocation metadata for this test CA on Schannel; CA and hostname verification remain enabled. Certificate installation is explained below.', 'small'));
     if (profile.id === 'oauth2') {
@@ -216,7 +249,7 @@ function renderProfile() {
 function renderCertificates() {
     byId('ca-fingerprint').textContent = `SHA-256: ${config.certificates.fingerprint256}`;
     byId('ca-expiry').textContent = `CA expires: ${config.certificates.validTo}`;
-    byId('trust-command').append(codeBlock(`${downloadCommands(['ca.crt'])}\nImport-Certificate -FilePath "$assetDir\\ca.crt" -CertStoreLocation Cert:\\CurrentUser\\Root`));
+    byId('trust-command').append(codeBlock(`${assetDir}\n# Point this to the folder containing the downloaded ca.crt.\nImport-Certificate -FilePath "$assetDir\\ca.crt" -CertStoreLocation Cert:\\CurrentUser\\Root`));
     byId('verify-command').append(codeBlock(`${assetDir}\ncurl.exe --fail --ssl-revoke-best-effort --cacert "$assetDir\\ca.crt" ${ps(`${config.endpoints.https}/test/none/status`)}\n# Windows Schannel: after importing the CA, also test without --cacert.\ncurl.exe --fail --ssl-revoke-best-effort ${ps(`${config.endpoints.https}/test/none/status`)}`));
 }
 
