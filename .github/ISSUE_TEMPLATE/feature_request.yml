@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a connection fixture or usability improvement.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Client testing problem
+      description: What cannot be verified with the current fixtures?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and scope
+      description: Include protocol, authentication, encoding and Range/HEAD behavior where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Describe observable results and the tests needed to verify them.
+    validations:
+      required: true

@@ -3,6 +3,18 @@ const fs = require('fs');
 const path = require('path');
 
 const certsDir = path.join(__dirname, 'certs');
+const requiredFiles = ['ca.crt', 'ca.key', 'server.crt', 'server.key', 'client.crt', 'client.key', 'client.p12'];
+if (process.argv.includes('--if-missing')) {
+    const existing = requiredFiles.filter(name => fs.existsSync(path.join(certsDir, name)));
+    if (existing.length === requiredFiles.length) {
+        console.log('Reusing existing test certificates.');
+        process.exit(0);
+    }
+    if (existing.length) {
+        console.error('Incomplete certificate set. Restore the missing files or explicitly run npm run generate-certs to replace the entire test PKI.');
+        process.exit(1);
+    }
+}
 if (!fs.existsSync(certsDir)) {
     fs.mkdirSync(certsDir);
 }

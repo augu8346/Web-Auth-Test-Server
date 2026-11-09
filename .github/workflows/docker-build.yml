@@ -6,13 +6,53 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
 
-    - name: Build Docker Image
-      run: docker-compose build
+    - name: Set up Node
+      uses: actions/setup-node@v5
+      with:
+        node-version: 24
+        cache: npm
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Validate Compose and start container
+      run: |
+        docker compose config --quiet
+        docker compose up --build -d
+        timeout 60 bash -c 'until curl --fail --silent http://127.0.0.1:9480/test/none/status; do sleep 1; done'
+
+    - name: Test container endpoints and certificate lifecycle
+      run: npm test
+
+    - name: Install Chromium
+      run: npx playwright install --with-deps chromium
+
+    - name: Test website
+      run: npm run test:ui
+
+    - name: Upload browser failure evidence
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: browser-test-results
+        path: test-results/
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Show logs and stop container
+      if: always()
+      run: |
+        docker compose logs --no-color --tail 100
+        docker compose down

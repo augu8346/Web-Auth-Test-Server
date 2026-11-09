@@ -1,20 +1,37 @@
 {
   "name": "web-auth-test-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A self-contained raster authentication and connection test workbench.",
+  "private": true,
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/augu8346/Web-Auth-Test-Server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/augu8346/Web-Auth-Test-Server/issues"
+  },
+  "homepage": "https://github.com/augu8346/Web-Auth-Test-Server#readme",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
+    "prestart": "node generate-certs.js --if-missing",
     "start": "node server.js",
     "generate-certs": "node generate-certs.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test-client.js",
+    "test:ui": "playwright test"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
     "node-forge": "^1.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
   }
 }

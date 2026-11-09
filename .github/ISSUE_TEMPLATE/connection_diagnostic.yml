@@ -1,0 +1,43 @@
+name: Connection diagnostic
+description: Troubleshoot TLS, authentication or raster delivery using dummy credentials.
+body:
+  - type: markdown
+    attributes:
+      value: Never attach private keys, actual netrc files, tokens or unsanitized request logs.
+  - type: input
+    id: client
+    attributes:
+      label: Client and environment
+      description: Client/GDAL version, TLS backend, OS, Docker/local mode and server revision.
+    validations:
+      required: true
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Connection profile
+      options:
+        - No Auth HTTP
+        - No Auth HTTPS
+        - Brotli HTTP or HTTPS
+        - Basic
+        - Netrc
+        - Bearer
+        - OAuth mock
+        - mTLS PEM
+        - mTLS PKCS#12
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Sanitized connection configuration
+      description: Use localhost and dummy values. Describe CA trust and client identity without attaching key files.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result and checks
+      description: Status code or TLS error, expected behavior, and whether npm test or the browser playground succeeds.
+    validations:
+      required: true
